@@ -1,4 +1,11 @@
-Attribute VB_Name = "Module10"
+Attribute VB_Name = "DataPreparation"
+' DataPreparation
+' Three preparation steps run on the active sheet at the start of the workflow:
+'   Step01a — cleans and standardises fund names into column T
+'   Step02a — calculates per-policy totals from column N into column U
+'   Step02b — copies rows that have a column U total to the next sheet (summary sheet)
+Option Explicit
+
 Sub Step01aNewCleanFundNames()
     Dim ws As Worksheet
     Dim lastRow As Long
@@ -11,35 +18,37 @@ Sub Step01aNewCleanFundNames()
     Dim prevRValue As String
     Dim nextRValue As String
     Dim cleanedValue As String
-    
+
     ' Set reference to the active worksheet
     Set ws = ActiveSheet
-    
+
+    ' Remove the first header row and leftmost column added by the raw export
     Rows("1:1").Select
     Selection.Delete Shift:=xlUp
     Columns("A:A").Select
     Selection.Delete Shift:=xlToLeft
     Range("A1").Select
-    
-    ' Find the last row in column R
+
+    ' Find the last row in column R (product/fund type)
     lastRow = ws.Cells(ws.Rows.Count, "R").End(xlUp).Row
-    
-    ' Loop through each row in column R starting from R2
+
+    ' Build a clean fund name in column T for every data row
     For i = 2 To lastRow
         cellValue = ws.Cells(i, "R").Value
         iColumnValue = ws.Cells(i, "I").Value
         kColumnValue = ws.Cells(i, "K").Value
-        
+
         If InStr(cellValue, "Kanaan") = 1 And InStr(cellValue, "Wrap") = Len(cellValue) - 3 Then
-            ' Case 1: Cell starts with "Kanaan" and ends with "Wrap"
+            ' Case 1: "Kanaan <FundName> Wrap" — strip the prefix and suffix
             cleanedValue = Trim(Mid(cellValue, 7, Len(cellValue) - 10))
             ws.Cells(i, "T").Value = cleanedValue
+
         ElseIf cellValue = "INVESTOR CHOICE" Then
-            ' Case 2a: Cell is "INVESTOR CHOICE"
+            ' Case 2a: Investor Choice policy — use the fund name from column K
             ws.Cells(i, "T").Value = kColumnValue
+
         ElseIf cellValue = "Tax Application" Then
-            ' Case 2b: Cell is "Tax Application"
-            ' Get values from column I and R for the previous and next rows
+            ' Case 2b: Tax Application row — inherit fund name from the adjacent policy row
             If i > 1 Then
                 prevIValue = ws.Cells(i - 1, "I").Value
                 prevRValue = ws.Cells(i - 1, "R").Value
@@ -47,7 +56,7 @@ Sub Step01aNewCleanFundNames()
                 prevIValue = ""
                 prevRValue = ""
             End If
-            
+
             If i < lastRow Then
                 nextIValue = ws.Cells(i + 1, "I").Value
                 nextRValue = ws.Cells(i + 1, "R").Value
@@ -55,8 +64,8 @@ Sub Step01aNewCleanFundNames()
                 nextIValue = ""
                 nextRValue = ""
             End If
-            
-            ' Check if I column value matches previous or next row
+
+            ' Match by policy number (column I) to previous or next row
             If iColumnValue = prevIValue And prevRValue <> "" Then
                 If InStr(prevRValue, "Kanaan") = 1 And InStr(prevRValue, "Wrap") = Len(prevRValue) - 3 Then
                     cleanedValue = Trim(Mid(prevRValue, 7, Len(prevRValue) - 10))
@@ -72,16 +81,20 @@ Sub Step01aNewCleanFundNames()
                     ws.Cells(i, "T").Value = kColumnValue
                 End If
             Else
-                ' If no match is found, copy from column K
+                ' No adjacent policy match — fall back to column K
                 ws.Cells(i, "T").Value = kColumnValue
             End If
+
         Else
-            ' Case 2c: All other cases
+            ' Case 2c: All other product types — use column K as-is
             ws.Cells(i, "T").Value = kColumnValue
         End If
     Next i
 End Sub
+
 Sub Step02aCalculatePolicyTotals()
+    ' Aggregates column N values by policy (column I) + fund name (column T).
+    ' Writes the group total into column U of the last row in each group.
     Dim ws As Worksheet
     Dim lastRow As Long
     Dim i As Long
@@ -90,25 +103,19 @@ Sub Step02aCalculatePolicyTotals()
     Dim currentName As String
     Dim nextName As String
     Dim total As Double
-    Dim startRow As Long
-    
+
     ' Set reference to the active worksheet
     Set ws = ActiveSheet
-    
-    ' Find the last row in column I
+
+    ' Find the last row in column I (policy numbers)
     lastRow = ws.Cells(ws.Rows.Count, "I").End(xlUp).Row
-    
-    ' Initialize variables
+
     total = 0
-    startRow = 2
-    
-    ' Loop through each row in column I starting from I2
+
     For i = 2 To lastRow
-        ' Get current and next row values
         currentPolicy = ws.Cells(i, "I").Value
         currentName = ws.Cells(i, "T").Value
-        
-        ' Get next row values, if available
+
         If i < lastRow Then
             nextPolicy = ws.Cells(i + 1, "I").Value
             nextName = ws.Cells(i + 1, "T").Value
@@ -116,35 +123,36 @@ Sub Step02aCalculatePolicyTotals()
             nextPolicy = ""
             nextName = ""
         End If
-        
-        ' Add current row's column N value to total
+
+        ' Accumulate the market value from column N
         If IsNumeric(ws.Cells(i, "N").Value) Then
             total = total + ws.Cells(i, "N").Value
         End If
-        
-        ' Check if the next row has a different policy number or name, or if it's the last row
+
+        ' Write total when the policy/fund group ends
         If currentPolicy <> nextPolicy Or currentName <> nextName Or i = lastRow Then
-            ' Place the total in column U of the current row
             ws.Cells(i, "U").Value = total
-            ' Reset total for the next group
             total = 0
         End If
     Next i
 End Sub
+
 Sub Step02bCopyRowsWithUValueToRightSheet()
+    ' Copies the header row and all summary rows (those with a column U total)
+    ' to the next sheet to the right, building a deduplicated summary sheet.
     Dim ws As Worksheet
     Dim wsTarget As Worksheet
     Dim lastRow As Long
     Dim i As Long
     Dim targetRow As Long
-    
+
     ' Set reference to the active worksheet
     Set ws = ActiveSheet
-    
+
+    ' Copy header row to the target sheet first
     Rows("1:1").Select
     Selection.Copy
-    
-    ' Get the sheet to the right (next sheet)
+
     On Error Resume Next
     Set wsTarget = ws.Next
     If wsTarget Is Nothing Then
@@ -152,27 +160,22 @@ Sub Step02bCopyRowsWithUValueToRightSheet()
         Exit Sub
     End If
     On Error GoTo 0
-    
+
     wsTarget.Select
     ActiveSheet.Paste
     Application.CutCopyMode = False
     Range("A1").Select
     ws.Select
     Range("A1").Select
-    
-    ' Find the last row in column T
+
+    ' Find the last row in column T (fund name — present on all data rows)
     lastRow = ws.Cells(ws.Rows.Count, "T").End(xlUp).Row
-    
-    ' Initialize target row for pasting (starting at row 2)
+
+    ' Paste only the group-total rows (those with a value in column U)
     targetRow = 2
-    
-    ' Loop through each row in column T starting from T2
     For i = 2 To lastRow
-        ' Check if there is a value in column U
         If Not IsEmpty(ws.Cells(i, "U")) Then
-            ' Copy the entire row to the target sheet
             ws.Rows(i).Copy Destination:=wsTarget.Rows(targetRow)
-            ' Increment the target row for the next paste
             targetRow = targetRow + 1
         End If
     Next i
