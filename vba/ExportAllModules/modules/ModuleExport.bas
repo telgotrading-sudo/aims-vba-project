@@ -3,6 +3,8 @@ Attribute VB_Name = "ModuleExport"
 ' Exports the VBA components of every .xlsm in the excel\ folder into the
 ' vba\<WorkbookName>\{modules|classes|forms}\ directory tree.
 ' Run this after making changes in Excel to push the latest code to disk.
+' Note: this workbook is included in its own export run. It uses ThisWorkbook
+' to avoid re-opening itself and to skip the Close (which would kill the macro).
 Option Explicit
 
 Sub ExportAllWorkbooks()
@@ -19,6 +21,7 @@ Sub ExportAllWorkbooks()
     Dim classesPath As String
     Dim formsPath As String
     Dim wbName As String
+    Dim isHostWorkbook As Boolean
 
     ' Root of the project — update this path if the repo moves
     projectRoot = "C:\Users\andriesvt\OneDrive\ExcelGitProjects\aims-vba-project"
@@ -32,10 +35,15 @@ Sub ExportAllWorkbooks()
 
         If LCase(fso.GetExtensionName(file.Name)) = "xlsm" Then
 
-            ' Uncomment to skip the control workbooks themselves:
-            'If file.Name = "ExportAllModules.xlsm" Or file.Name = "ImportAllModules.xlsm" Then GoTo NextFile
+            ' Detect whether this file is the workbook running the macro.
+            ' If so, use the existing open reference instead of re-opening it.
+            isHostWorkbook = (LCase(file.path) = LCase(ThisWorkbook.FullName))
 
-            Set wb = Workbooks.Open(file.path)
+            If isHostWorkbook Then
+                Set wb = ThisWorkbook
+            Else
+                Set wb = Workbooks.Open(file.path)
+            End If
 
             wbName = Replace(file.Name, ".xlsm", "")
 
@@ -64,11 +72,13 @@ Sub ExportAllWorkbooks()
                 End If
             Next comp
 
-            wb.Close SaveChanges:=False
+            ' Don't close the host workbook — it is running this macro
+            If Not isHostWorkbook Then
+                wb.Close SaveChanges:=False
+            End If
 
         End If
 
-NextFile:
     Next file
 
     MsgBox "All exports complete!"
@@ -80,3 +90,4 @@ Private Sub CreateFolder(fso As Object, path As String)
         fso.CreateFolder path
     End If
 End Sub
+
