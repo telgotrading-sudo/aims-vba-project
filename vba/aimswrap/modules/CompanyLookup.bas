@@ -5,6 +5,7 @@ Option Explicit
 ' - Match found    : writes the company name one column to the left and clears any red highlight.
 ' - No match found : highlights the active cell in red to flag the missing entry.
 ' After processing, advances the active cell down by one row.
+' ...
 
 Sub CompIdFind()
 
