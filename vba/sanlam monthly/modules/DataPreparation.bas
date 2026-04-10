@@ -18,7 +18,7 @@ Sub Step01PastePrep()
     Range("E1").Value = "Units"
     Range("F1").Value = "Value"
 
-    ' Autofit the date column and remove the two filler rows below the new header
-    Columns("C:C").EntireColumn.AutoFit
+    ' Remove the two filler rows below the new header, then autofit all data columns
     Rows("2:3").Delete Shift:=xlUp
+    Columns("A:F").EntireColumn.AutoFit
 End Sub
