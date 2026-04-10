@@ -36,8 +36,8 @@ Sub ExportAllWorkbooks()
         If LCase(fso.GetExtensionName(file.Name)) = "xlsm" Then
 
             ' Detect whether this file is the workbook running the macro.
-            ' If so, use the existing open reference instead of re-opening it.
-            isHostWorkbook = (LCase(file.path) = LCase(ThisWorkbook.FullName))
+            ' Use file name comparison (more reliable than comparing full paths).
+            isHostWorkbook = (LCase(file.Name) = LCase(ThisWorkbook.Name))
 
             If isHostWorkbook Then
                 Set wb = ThisWorkbook

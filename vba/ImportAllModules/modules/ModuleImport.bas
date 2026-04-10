@@ -24,12 +24,6 @@ Sub ImportAllWorkbooks()
     Dim comp As Object
     Dim isHostWorkbook As Boolean
 
-    ' Component names to remove are collected before removal to avoid
-    ' modifying the VBComponents collection while iterating it
-    Dim compsToRemove() As String
-    Dim removeCount As Long
-    Dim j As Long
-
     ' Root of the project — update this path if the repo moves
     projectRoot = "C:\Users\andriesvt\OneDrive\ExcelGitProjects\aims-vba-project"
     excelPath = projectRoot & "\excel\"
@@ -41,9 +35,8 @@ Sub ImportAllWorkbooks()
 
         If LCase(fso.GetExtensionName(file.Name)) = "xlsm" Then
 
-            ' Detect whether this file is the workbook running the macro.
-            ' If so, use the existing open reference instead of re-opening it.
-            isHostWorkbook = (LCase(file.path) = LCase(ThisWorkbook.FullName))
+            ' Detect host workbook by name (more reliable than comparing full paths)
+            isHostWorkbook = (LCase(file.Name) = LCase(ThisWorkbook.Name))
 
             If isHostWorkbook Then
                 Set wb = ThisWorkbook
@@ -58,21 +51,12 @@ Sub ImportAllWorkbooks()
             classesPath = vbaPath & "classes\"
             formsPath = vbaPath & "forms\"
 
-            ' Collect names of removable components first, then remove in a second pass
-            ' (removing while iterating the VBComponents collection is unsafe)
-            removeCount = 0
-            ReDim compsToRemove(0)
+            ' Remove existing standard modules, class modules and forms
             For Each comp In wb.VBProject.VBComponents
                 If comp.Type = 1 Or comp.Type = 2 Or comp.Type = 3 Then
-                    removeCount = removeCount + 1
-                    ReDim Preserve compsToRemove(1 To removeCount)
-                    compsToRemove(removeCount) = comp.Name
+                    wb.VBProject.VBComponents.Remove comp
                 End If
             Next comp
-
-            For j = 1 To removeCount
-                wb.VBProject.VBComponents.Remove wb.VBProject.VBComponents(compsToRemove(j))
-            Next j
 
             ' Import modules, classes and forms from disk
             If fso.FolderExists(modulesPath) Then
@@ -104,4 +88,5 @@ Sub ImportAllWorkbooks()
 
     MsgBox "All imports complete!"
 End Sub
+
 
