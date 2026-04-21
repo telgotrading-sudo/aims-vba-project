@@ -18,15 +18,43 @@ Sub Step01aNewCleanFundNames()
     Dim prevRValue As String
     Dim nextRValue As String
     Dim cleanedValue As String
+    Dim firstRowEmpty As Boolean
+    Dim firstColEmpty As Boolean
+    Dim j As Long
 
     ' Set reference to the active worksheet
     Set ws = ActiveSheet
 
-    ' Remove the first header row and leftmost column added by the raw export
-    Rows("1:1").Select
-    Selection.Delete Shift:=xlUp
-    Columns("A:A").Select
-    Selection.Delete Shift:=xlToLeft
+    ' Check if the first row is empty (artifact from raw export)
+    firstRowEmpty = True
+    For j = 1 To ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+        If Not IsEmpty(ws.Cells(1, j)) Then
+            firstRowEmpty = False
+            Exit For
+        End If
+    Next j
+
+    ' Check if the first column is empty (artifact from raw export)
+    firstColEmpty = True
+    For j = 1 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        If Not IsEmpty(ws.Cells(j, 1)) Then
+            firstColEmpty = False
+            Exit For
+        End If
+    Next j
+
+    ' Remove the first header row only if it is empty
+    If firstRowEmpty Then
+        Rows("1:1").Select
+        Selection.Delete Shift:=xlUp
+    End If
+
+    ' Remove the leftmost column only if it is empty
+    If firstColEmpty Then
+        Columns("A:A").Select
+        Selection.Delete Shift:=xlToLeft
+    End If
+
     Range("A1").Select
 
     ' Find the last row in column R (product/fund type)
