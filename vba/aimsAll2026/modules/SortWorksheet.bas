@@ -30,7 +30,7 @@ Sub Step01bGeneralSort()
 
     ' Add sort keys: column D (primary), I (secondary), T (tertiary)
     ws.Sort.SortFields.Add2 Key:=ws.Range("D2:D" & lastRowD), _
-        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortGeneral
 
     ws.Sort.SortFields.Add2 Key:=ws.Range("I2:I" & lastRowI), _
         SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
