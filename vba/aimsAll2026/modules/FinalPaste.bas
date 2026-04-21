@@ -1,14 +1,22 @@
 Attribute VB_Name = "FinalPaste"
 ' FinalPaste
-' Final step (Step 05): copies columns U:V from aimsAll.xlsm
+' Final step (Step 05): copies columns U:V from aimsAll2026.xlsm
 ' and pastes values into aimswrap.xlsm (sheet "aimswrap") starting at F2.
 Option Explicit
 
 Sub Step05FinalPaste()
+    Dim ws As Worksheet
+    Dim lastRow As Long
 
-    ' Copy calculated columns U:V from aimsAll and paste values into aimswrap column F
-    Windows("aimsAll.xlsm").Activate
-    Range("U2:V441").Select
+    ' Copy calculated columns U:V from aimsAll2026 and paste values into aimswrap column F
+    Windows("aimsAll2026.xlsm").Activate
+    Set ws = ActiveSheet
+    
+    ' Find the last row with data in column U
+    lastRow = ws.Cells(ws.Rows.Count, "U").End(xlUp).Row
+    
+    ' Copy the range from row 2 to the last row with data
+    Range("U2:V" & lastRow).Select
     Selection.Copy
     Windows("aimswrap.xlsm").Activate
     Sheets("aimswrap").Select
