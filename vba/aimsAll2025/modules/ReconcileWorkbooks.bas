@@ -1,6 +1,6 @@
 Attribute VB_Name = "ReconcileWorkbooks"
 ' ReconcileWorkbooks
-' Compares aimsAll.xlsm and aimswrap.xlsm row-by-row to detect mismatches.
+' Compares aimsAll2025.xlsm and aimswrap.xlsm row-by-row to detect mismatches.
 ' For "INVESTOR CHOICE" rows, inserts a duplicate wrap row when needed.
 ' Stops at the first unresolvable mismatch and selects the differing cells.
 Option Explicit
@@ -23,7 +23,7 @@ Attribute Step03markdiff.VB_ProcData.VB_Invoke_Func = "N\n14"
 
     ' Set references to workbooks and sheets
     On Error Resume Next
-    Set wbAll = Workbooks("aimsAll.xlsm")
+    Set wbAll = Workbooks("aimsAll2025.xlsm")
     Set wbWrap = Workbooks("aimswrap.xlsm")
     Set wsAll = wbAll.ActiveSheet
     Set wsWrap = wbWrap.Sheets("aimswrap")
