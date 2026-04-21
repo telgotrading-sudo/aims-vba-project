@@ -1,2 +1,5 @@
 # Excel workfiles — tracked as exported VBA modules only, not as binary blobs
 excel/
+
+# VS Code user settings — varies by developer
+.vscode/
